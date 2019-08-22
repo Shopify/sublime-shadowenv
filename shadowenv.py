@@ -7,13 +7,13 @@ import json
 
 class ShadowenvTrust(sublime_plugin.TextCommand):
     def run(self, edit):
-        ff = (sublime.active_window().folders() or [])[0]
-        if not ff:
+        folders = sublime.active_window().folders()
+        if not folders:
             sublime.error_message("nothing seems to be open to trust")
             return None
         seproc = subprocess.Popen(
             ["shadowenv", "trust"],
-            cwd=ff,
+            cwd=folders[0],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=False,
@@ -31,18 +31,21 @@ class ShadowenvProjectEnvironmentListener(sublime_plugin.EventListener):
         self.shadowenv_data = ""
 
     def on_activated(self, view):
-        ff = (sublime.active_window().folders() or [])[0]
-        if self.first_folder == ff:
+        folders = sublime.active_window().folders()
+        folder = folders[0] if folders else None
+
+        if self.first_folder == folder:
             return
         else:
-            self.first_folder = ff
-            if self.first_folder:
-                sublime.set_timeout_async(self.load_shadowenv, 0)
+            self.first_folder = folder
+            sublime.set_timeout_async(self.load_shadowenv, 0)
 
     def shadowenv_stuff(self):
+        cwd = self.first_folder if self.first_folder else "/"
+        print("using cwd: "+cwd)
         seproc = subprocess.Popen(
             ["shadowenv", "hook", "--json", self.shadowenv_data],
-            cwd=self.first_folder,
+            cwd=cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=False,
@@ -59,7 +62,10 @@ class ShadowenvProjectEnvironmentListener(sublime_plugin.EventListener):
         if output:
             data = json.loads(output.decode("utf-8"))
             for name, value in data['exported'].items():
-                os.environ[name] = value
+                if value:
+                    os.environ[name] = value
+                else:
+                    del os.environ[name]
             for name, value in data['unexported'].items():
                 if name == '__shadowenv_data':
                     self.shadowenv_data = value
