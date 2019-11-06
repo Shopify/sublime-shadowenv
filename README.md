@@ -14,6 +14,10 @@ git clone https://github.com/Shopify/sublime-shadowenv ~/Library/Application\ Su
 
 When there's a Shadowenv present in the project, it will be loaded automatically.
 
+Note that environment changes will be applied when you open a project, but they will be applied
+across all windows, so working on multiple projects at the same time will end up with both projects
+sharing the environment of the most-recently-opened.
+
 # TODO/bugs
 
 * Reload automatically after running shadowenv trust
