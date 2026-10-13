@@ -62,10 +62,10 @@ class ShadowenvProjectEnvironmentListener(sublime_plugin.EventListener):
         if output:
             data = json.loads(output.decode("utf-8"))
             for name, value in data['exported'].items():
-                if value:
-                    os.environ[name] = value
+                if value is None:
+                    os.environ.pop(name, None)
                 else:
-                    del os.environ[name]
+                    os.environ[name] = value
             for name, value in data['unexported'].items():
                 if name == '__shadowenv_data':
                     self.shadowenv_data = value
