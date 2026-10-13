@@ -19,9 +19,11 @@ class ShadowenvTrust(sublime_plugin.TextCommand):
             shell=False,
         )
         output, error = seproc.communicate()
-        if error:
+        if seproc.returncode != 0:
             sublime.error_message("shadowenv is not trusted: run shadowenv trust")
             return None
+        if error:
+            print("shadowenv trust warning: " + error.decode("utf-8", errors="replace"))
         sublime.status_message("shadowenv trusted")
 
 class ShadowenvProjectEnvironmentListener(sublime_plugin.EventListener):
@@ -51,13 +53,19 @@ class ShadowenvProjectEnvironmentListener(sublime_plugin.EventListener):
             shell=False,
         )
         output, error = seproc.communicate()
-        if error:
-            if "untrusted" in error.decode():
+        if seproc.returncode != 0:
+            error_text = error.decode("utf-8", errors="replace")
+            if "untrusted" in error_text:
                 sublime.error_message("shadowenv is not trusted: run shadowenv trust")
                 return None
             else:
-                sublime.error_message("shadowenv error: "+error.decode())
+                if error_text:
+                    sublime.error_message("shadowenv error: " + error_text)
+                else:
+                    sublime.error_message("shadowenv exited with status {}".format(seproc.returncode))
                 return None
+        if error:
+            print("shadowenv warning: " + error.decode("utf-8", errors="replace"))
 
         if output:
             data = json.loads(output.decode("utf-8"))
