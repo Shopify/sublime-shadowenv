@@ -11,13 +11,17 @@ class ShadowenvTrust(sublime_plugin.TextCommand):
         if not folders:
             sublime.error_message("nothing seems to be open to trust")
             return None
-        seproc = subprocess.Popen(
-            ["shadowenv", "trust"],
-            cwd=folders[0],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False,
-        )
+        try:
+            seproc = subprocess.Popen(
+                ["shadowenv", "trust"],
+                cwd=folders[0],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
+            )
+        except FileNotFoundError:
+            sublime.error_message("shadowenv not found")
+            return None
         output, error = seproc.communicate()
         if error:
             sublime.error_message("shadowenv is not trusted: run shadowenv trust")
@@ -43,13 +47,17 @@ class ShadowenvProjectEnvironmentListener(sublime_plugin.EventListener):
     def shadowenv_stuff(self):
         cwd = self.first_folder if self.first_folder else "/"
         print("using cwd: "+cwd)
-        seproc = subprocess.Popen(
-            ["shadowenv", "hook", "--json", self.shadowenv_data],
-            cwd=cwd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False,
-        )
+        try:
+            seproc = subprocess.Popen(
+                ["shadowenv", "hook", "--json", self.shadowenv_data],
+                cwd=cwd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
+            )
+        except FileNotFoundError:
+            sublime.status_message("shadowenv not found")
+            return None
         output, error = seproc.communicate()
         if error:
             if "untrusted" in error.decode():
